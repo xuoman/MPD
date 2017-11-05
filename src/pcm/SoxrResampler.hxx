@@ -45,6 +45,6 @@ public:
 };
 
 void
-pcm_resample_soxr_global_init(const ConfigBlock &block);
+pcm_resample_soxr_global_init(const ConfigBlock &block, const ConfigBlock &block_phase);
 
 #endif

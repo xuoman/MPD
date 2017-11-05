@@ -54,6 +54,16 @@ static constexpr struct {
 	{ SOXR_INVALID_RECIPE, nullptr }
 };
 
+static constexpr struct {
+	unsigned long recipe;
+	const char *name;
+} soxr_phase_table[] = {
+	{ SOXR_LINEAR_PHASE, "linear" },
+	{ SOXR_INTERMEDIATE_PHASE, "intermediate" },
+	{ SOXR_MINIMUM_PHASE, "minimum" },
+	{ SOXR_LINEAR_PHASE, nullptr }
+};
+
 gcc_const
 static const char *
 soxr_quality_name(unsigned long recipe) noexcept
@@ -80,8 +90,22 @@ soxr_parse_quality(const char *quality) noexcept
 	return SOXR_INVALID_RECIPE;
 }
 
+gcc_pure
+static unsigned long
+soxr_parse_phase(const char *phase) noexcept
+{
+	if (phase == nullptr)
+		return SOXR_DEFAULT_RECIPE;
+
+	for (const auto *i = soxr_phase_table; i->name != nullptr; ++i)
+		if (strcmp(i->name, phase) == 0)
+			return i->recipe;
+
+	return SOXR_LINEAR_PHASE;
+}
+
 void
-pcm_resample_soxr_global_init(const ConfigBlock &block)
+pcm_resample_soxr_global_init(const ConfigBlock &block, const ConfigBlock &block_phase)
 {
 	const char *quality_string = block.GetBlockValue("quality");
 	unsigned long recipe = soxr_parse_quality(quality_string);
@@ -91,7 +115,10 @@ pcm_resample_soxr_global_init(const ConfigBlock &block)
 		throw FormatRuntimeError("unknown quality setting '%s' in line %d",
 					 quality_string, block.line);
 	}
-
+	
+	const char *phase_string = block_phase.GetBlockValue("phase");
+	recipe |= soxr_parse_phase(phase_string);
+	
 	soxr_quality = soxr_quality_spec(recipe, 0);
 
 	FormatDebug(soxr_domain,

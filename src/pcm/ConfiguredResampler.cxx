@@ -127,12 +127,28 @@ GetResamplerConfig(ConfigBlock &buffer)
 	return block;
 }
 
+static const ConfigBlock *
+GetResamplerPhaseConfig(ConfigBlock &buffer)
+{
+	const auto *old_param =
+		config_get_param(ConfigOption::SOXR_PHASE);
+	const auto *block = config_get_block(ConfigBlockOption::RESAMPLER);
+	if (block == nullptr)
+		return MigrateResamplerConfig(old_param, buffer);
+
+	if (old_param != nullptr)
+		throw FormatRuntimeError("Cannot use both 'resampler' (line %d) and 'samplerate_converter' (line %d)",
+					 block->line, old_param->line);
+
+	return block;
+}
+
 void
 pcm_resampler_global_init()
 {
 	ConfigBlock buffer;
 	const auto *block = GetResamplerConfig(buffer);
-
+	const auto *block_phase = GetResamplerPhaseConfig(buffer);
 	const char *plugin_name = block->GetBlockValue("plugin");
 	if (plugin_name == nullptr)
 		throw FormatRuntimeError("'plugin' missing in line %d",
@@ -143,7 +159,7 @@ pcm_resampler_global_init()
 #ifdef ENABLE_SOXR
 	} else if (strcmp(plugin_name, "soxr") == 0) {
 		selected_resampler = SelectedResampler::SOXR;
-		pcm_resample_soxr_global_init(*block);
+		pcm_resample_soxr_global_init(*block, *block_phase);
 #endif
 #ifdef ENABLE_LIBSAMPLERATE
 	} else if (strcmp(plugin_name, "libsamplerate") == 0) {

@@ -52,6 +52,7 @@ const ConfigTemplate config_param_templates[] = {
 	{ "replaygain_limit" },
 	{ "volume_normalization" },
 	{ "samplerate_converter" },
+	{ "soxr_phase" },
 	{ "audio_buffer_size" },
 	{ "buffer_before_play" },
 	{ "http_proxy_host", false, true },
